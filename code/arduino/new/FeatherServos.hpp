@@ -4,6 +4,9 @@
 #include <stdint.h>
 
 
+#define  SERVO_ANGLE_LIMIT_DEG     90.0f
+
+
 class FeatherServos {
 	public:
 		void init();

@@ -3,9 +3,6 @@
 #include <Arduino.h>
 
 
-#define ANGLE_LIMIT_DEG     90.0f
-
-
 // Preinstantiate
 FeatherServos Servos;
 
@@ -76,10 +73,10 @@ void FeatherServos::setAngle(uint8_t servoNum, float angleDeg)
   if(servoNum > _servoCount) return;
 
   // Constrain angle between limits
-  angleDeg = angleDeg < -ANGLE_LIMIT_DEG ? -ANGLE_LIMIT_DEG : (angleDeg > ANGLE_LIMIT_DEG ? ANGLE_LIMIT_DEG : angleDeg);
+  angleDeg = angleDeg < -SERVO_ANGLE_LIMIT_DEG ? -SERVO_ANGLE_LIMIT_DEG : (angleDeg > SERVO_ANGLE_LIMIT_DEG ? SERVO_ANGLE_LIMIT_DEG : angleDeg);
 
   // Map angle to pulse width
-  uint16_t pulseWidth = 500 + ((angleDeg + ANGLE_LIMIT_DEG) / (ANGLE_LIMIT_DEG * 2)) * 2000;
+  uint16_t pulseWidth = 500 + ((angleDeg + SERVO_ANGLE_LIMIT_DEG) / (SERVO_ANGLE_LIMIT_DEG * 2)) * 2000;
 
   // Update PWM duty cycle
   switch(servoNum) {
