@@ -1,6 +1,8 @@
 #ifndef __FEATHER_SERVOS_HPP
 #define __FEATHER_SERVOS_HPP
 
+#include <stdint.h>
+
 
 class FeatherServos {
 	public:
@@ -15,9 +17,6 @@ class FeatherServos {
 	private:
 		void initTCC0();
 		void initTCC2();
-
-		const uint8_t _servoCount = 3;
-		const uint8_t _servoPins[_servoCount] = {5, 6, 11};
 };
 
 
@@ -26,3 +25,4 @@ extern FeatherServos Servos;
 
 
 #endif	// __FEATHER__SERVOS_HPP
+

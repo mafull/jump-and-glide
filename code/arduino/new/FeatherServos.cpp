@@ -1,8 +1,17 @@
 #include "FeatherServos.hpp"
 
+#include <Arduino.h>
+
+
+#define ANGLE_LIMIT_DEG     90.0f
+
 
 // Preinstantiate
 FeatherServos Servos;
+
+
+const uint8_t _servoCount = 3;
+const uint8_t _servoPins[_servoCount] = {5, 6, 11};
 
 
 // ---- PUBLIC FUNCTIONS ----
@@ -15,7 +24,7 @@ void FeatherServos::init() {
 
 // Enable PWM output
 //    servoNum    Number of the servo to enable (-1 enables all)
-void FeatherServos::enable(int8_t servoNum = -1)
+void FeatherServos::enable(int8_t servoNum)
 {
   if(servoNum > _servoCount) return;
   else if(servoNum >= 0) {
@@ -38,7 +47,7 @@ void FeatherServos::enable(int8_t servoNum = -1)
 
 // Disable PWM output
 //    servoNum    Number of the servo to disable (-1 disables all)
-void FeatherServos::disable(int8_t servoNum = -1)
+void FeatherServos::disable(int8_t servoNum)
 {
   if(servoNum > _servoCount) return;
   else if(servoNum >= 0) {
@@ -61,16 +70,16 @@ void FeatherServos::disable(int8_t servoNum = -1)
 
 // Set the servo angle
 //    servoNum    Number of the servo to update
-//    angleDeg    Angle in degrees (-180.0 to +180.0)
+//    angleDeg    Angle in degrees (limited to +-ANGLE_LIMIT_DEG)
 void FeatherServos::setAngle(uint8_t servoNum, float angleDeg)
 {
   if(servoNum > _servoCount) return;
 
-  // Constrain angle between -180 to +180deg
-  angleDeg = angleDeg < -180.0f ? -180.0f : (angleDeg > 180.0f ? 180.0f : angleDeg);
+  // Constrain angle between limits
+  angleDeg = angleDeg < -ANGLE_LIMIT_DEG ? -ANGLE_LIMIT_DEG : (angleDeg > ANGLE_LIMIT_DEG ? ANGLE_LIMIT_DEG : angleDeg);
 
   // Map angle to pulse width
-  uint16_t pulseWidth = 500 + ((angleDeg + 180.0f) / 360.0f) * 2000;
+  uint16_t pulseWidth = 500 + ((angleDeg + ANGLE_LIMIT_DEG) / (ANGLE_LIMIT_DEG * 2)) * 2000;
 
   // Update PWM duty cycle
   switch(servoNum) {
@@ -132,9 +141,6 @@ void FeatherServos::initTCC0() {
   REG_TCC0_WAVE |= TCC_WAVE_POL(0xF) |            // Reverse the output polarity on all TCC0 outputs
                    TCC_WAVE_WAVEGEN_DSBOTH;       // Setup dual slope PWM on TCC0
   while (TCC0->SYNCBUSY.bit.WAVE);                // Wait for synchronization
-  REG_TCC2_WAVE |= TCC_WAVE_POL(0xF) |            // Reverse the output polarity on all TCC2 outputs
-                   TCC_WAVE_WAVEGEN_DSBOTH;       // Setup dual slope PWM on TCC2
-  while (TCC2->SYNCBUSY.bit.WAVE);                // Wait for synchronization
 
   // Each timer counts up to a maximum or TOP value set by the PER register,
   // this determines the frequency of the PWM operation: 
