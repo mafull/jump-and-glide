@@ -1,17 +1,20 @@
 #include "FeatherIMU.hpp"
 #include "FeatherServos.hpp"
-#include "Interrupts.hpp"
+#include "PID.hpp"
 #include "Utils.hpp"
 
-#define LOOP_FREQUENCY_HZ     100
 
-#define PIN_BUTTON            9
-#define PIN_LED_STATUS        13
-#define PIN_MOTOR             10
+#define CONTROL_LAUNCH_ANGLE_DEG  70.0f
 
-#define SERVO_NUM_CLUTCH		  2     // Pin 11 
-#define SERVO_NUM_LEFT_WING		0     // Pin 5
-#define SERVO_NUM_RIGHT_WING	1     // Pin 6
+#define LOOP_FREQUENCY_HZ         100
+
+#define PIN_BUTTON                9
+#define PIN_LED_STATUS            13
+#define PIN_MOTOR                 10
+
+#define SERVO_NUM_CLUTCH		      2     // Pin 11
+#define SERVO_NUM_LEFT_WING		    0     // Pin 5
+#define SERVO_NUM_RIGHT_WING	    1     // Pin 6
 
 typedef enum State_t {
   IDLE,
@@ -24,11 +27,7 @@ typedef enum State_t {
 
 
 State state = IDLE;
-
-float pitch = 0.0f;
-float roll = 0.0f;
-float heading = 6.9f;
-
+float desiredHeading = 0.0f;
 
 void advanceState() {
   state = (State)((int)state + 1);
@@ -47,6 +46,9 @@ void setup() {
   
   // Initialise motor
   pinMode(PIN_MOTOR, OUTPUT);
+
+  // Initialise IMU
+  IMU.init();
   
 	// Initialise timers for servos
 	Servos.init();
@@ -70,7 +72,7 @@ void controlLoop() {
 
 
   // ---- INPUTS ----
-  // READ SENSORS HERE
+  IMU.update();
   
   int ain = analogRead(0);
   ain = constrain(ain, 0, 1024);
@@ -85,12 +87,18 @@ void controlLoop() {
     case WINDING:
       // Turn winding motor on
       motorOn = true;
+
+      // Once pitched enough, jump
+      if(IMU.pitch >= CONTROL_LAUNCH_ANGLE_DEG) state = JUMPING;
       
       break;
 
     case JUMPING:
       // Disengage leg clutch
       angleC = -45.0f;
+
+      // Once at peak of jump, deploy wings
+      if(0 /* DO CLEVER STUFF HERE */) state = GLIDING;
       
       break;
 
@@ -98,16 +106,18 @@ void controlLoop() {
       // Disengage wing clutch
       angleC = 45.0f;
 
+      // CALCULATE DESIRED PITCH/ROLL
 
-
-
-
-      // Use pitch/roll requirements to generate servo outputs
+      // Use desired pitch/roll to generate servo outputs
       {
       float a = map(ain, 0, 1024, -90, 90);
       angleLW = a;
       angleRW = -a;
       }
+
+      // Once landed, reset
+      if(0 /* DO CLEVER STUFF HERE */) state = IDLE;
+      
       break;
 
     default:
@@ -132,9 +142,9 @@ void controlLoop() {
   char pitchStr[5] = "";
   char rollStr[5] = "";
   char headingStr[5] = "";
-  dtostrf(pitch, 4, 2, pitchStr);
-  dtostrf(roll, 4, 2, rollStr);
-  dtostrf(heading, 4, 2, headingStr);
+  dtostrf(IMU.pitch, 4, 2, pitchStr);
+  dtostrf(IMU.roll, 4, 2, rollStr);
+  dtostrf(IMU.heading, 4, 2, headingStr);
   sprintf(str, "%01d|-> rph: %s %s %s | servos: %4d %4d %4d | motor: %1d",
     state,
     rollStr, pitchStr, headingStr,
