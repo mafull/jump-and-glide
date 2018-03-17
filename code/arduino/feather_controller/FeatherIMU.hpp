@@ -5,9 +5,10 @@
 class FeatherIMU {
   public:
     void init();
+    void calibrate();
+    void update();
 
-
-    float roll, pitch, yaw;
+    float roll, pitch, heading;
 
   private:
     
