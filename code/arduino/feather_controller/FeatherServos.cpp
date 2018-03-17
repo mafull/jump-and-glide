@@ -25,16 +25,8 @@ void FeatherServos::enable(int8_t servoNum)
 {
   if(servoNum > _servoCount) return;
   else if(servoNum >= 0) {
-    
-#if 0
-    // Enable the specified servo
-    REG_TCC0_CTRLA |= TCC_CTRLA_ENABLE;             // Enable the TCC0 output
-    while (TCC0->SYNCBUSY.bit.ENABLE);              // Wait for synchronization
-#else
     uint8_t pin = _servoPins[servoNum];
     PORT->Group[g_APinDescription[pin].ulPort].PMUX[g_APinDescription[pin].ulPin >> 1].reg = !(pin % 2) ? PORT_PMUX_PMUXE_F : PORT_PMUX_PMUXO_F;
-#endif
-
   } else {
     // Enable all servos
     for(int n = 0; n < _servoCount; n++) enable(n);
@@ -48,16 +40,9 @@ void FeatherServos::disable(int8_t servoNum)
 {
   if(servoNum > _servoCount) return;
   else if(servoNum >= 0) {
-      // Disable the specified servo      
-#if 0
-      REG_TCC0_CTRLA &= ~TCC_CTRLA_ENABLE;            // Disable the TCC0 output
-      while (TCC0->SYNCBUSY.bit.ENABLE);              // Wait for synchronization
-#else
-      uint8_t pin = _servoPins[servoNum];
-      //TODO
-      PORT->Group[g_APinDescription[pin].ulPort].PMUX[g_APinDescription[pin].ulPin >> 1].reg = !(pin % 2) ? PORT_PMUX_PMUXE_F : PORT_PMUX_PMUXO_F;
-#endif
-
+    // Disable the specified servo      
+    uint8_t pin = _servoPins[servoNum];
+    PORT->Group[g_APinDescription[pin].ulPort].PMUX[g_APinDescription[pin].ulPin >> 1].reg = !(pin % 2) ? ~PORT_PMUX_PMUXE_F : ~PORT_PMUX_PMUXO_F;
   } else {
     // Disable all servos
     for(int n = 0; n < _servoCount; n++) disable(n);
@@ -125,8 +110,7 @@ void FeatherServos::initTCC0() {
   // ** Port pins are paired odd PMUO and even PMUXE **
   // ** F & E specify the timers: TCC0, TCC1 and TCC2 **
   // Connect the TCC0 timer to digital outputs D5 (CC1) and D6 (CC2)
-  PORT->Group[g_APinDescription[5].ulPort].PMUX[g_APinDescription[5].ulPin >> 1].reg = PORT_PMUX_PMUXO_F;
-  PORT->Group[g_APinDescription[6].ulPort].PMUX[g_APinDescription[6].ulPin >> 1].reg = PORT_PMUX_PMUXE_F;
+  // ---- MOVED TO enable()
 
   // Feed GCLK4 to TCC0 and TCC1
   REG_GCLK_CLKCTRL = GCLK_CLKCTRL_CLKEN |         // Enable GCLK4 to TCC0 and TCC1
@@ -174,7 +158,7 @@ void FeatherServos::initTCC2() {
   // ** Port pins are paired odd PMUO and even PMUXE **
   // ** F & E specify the timers: TCC0, TCC1 and TCC2 **
   // Connect the TCC2 timer to digital output D11 (CC0)
-  PORT->Group[g_APinDescription[11].ulPort].PMUX[g_APinDescription[11].ulPin >> 1].reg = PORT_PMUX_PMUXO_F;
+  // ---- MOVED TO enable()
 
   // Feed GCLK5 to TCC2 and TC3
   REG_GCLK_CLKCTRL = GCLK_CLKCTRL_CLKEN |         // Enable GCLK5 to TCC2 and TC3
