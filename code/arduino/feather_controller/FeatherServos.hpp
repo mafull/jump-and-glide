@@ -18,6 +18,7 @@ class FeatherServos {
 
 
 	private:
+    void initGCLK4();
 		void initTCC0();
 		void initTCC2();
 };
