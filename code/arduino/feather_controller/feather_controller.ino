@@ -16,26 +16,25 @@
 #define SERVO_NUM_LEFT_WING		    0     // Pin 5
 #define SERVO_NUM_RIGHT_WING	    1     // Pin 6
 
-typedef enum State_t {
-  IDLE,
-  WINDING,
-  JUMPING,
-  GLIDING,
-
-  NUM_STATES
-} State;
+typedef enum State_t {IDLE,
+                      WINDING,
+                      JUMPING,
+                      GLIDING,
+                      NUM_STATES} State;
 
 
 State state = IDLE;
 float desiredHeading = 0.0f;
 
-void advanceState() {
+void advanceState() 
+{
   state = (State)((int)state + 1);
   if(state == NUM_STATES) state = IDLE;
 }
 
 
-void setup() {
+void setup() 
+{
   // Initialise serial
   Serial.begin(115200);
   Serial.println("Serial initialised");
@@ -63,7 +62,8 @@ void setup() {
 }
 
 
-void controlLoop() {
+void controlLoop() 
+{
   // Default states
   bool motorOn = false;         // Winding motor on/off
   float angleC = 0.0f;          // Clutch servo angle
@@ -79,7 +79,8 @@ void controlLoop() {
 
 
   // ---- STATE MACHINE ----
-  switch(state) {
+  switch(state) 
+  {
     case IDLE:
 
       break;
@@ -126,7 +127,6 @@ void controlLoop() {
   }
 
 
-
   // ---- OUTPUTS ----
   // Motor
   digitalWrite(PIN_MOTOR, motorOn ? HIGH : LOW);
@@ -154,7 +154,8 @@ void controlLoop() {
 }
 
 
-void loop() {
+void loop() 
+{
 	controlLoop();
   delay(1000/LOOP_FREQUENCY_HZ);
 }
