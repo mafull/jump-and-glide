@@ -16,8 +16,9 @@
 #define SERVO_NUM_LEFT_WING		    0     // Pin 5
 #define SERVO_NUM_RIGHT_WING	    1     // Pin 6
 
-typedef enum State_t {IDLE,
+typedef enum State_t {IDLE = 0,
                       WINDING,
+                      PREJUMP,
                       JUMPING,
                       GLIDING,
                       NUM_STATES} State;
@@ -28,8 +29,7 @@ float desiredHeading = 0.0f;
 
 void advanceState() 
 {
-  state = (State)((int)state + 1);
-  if(state == NUM_STATES) state = IDLE;
+  state = (State)(((int)state + 1)%NUM_STATES);
 }
 
 
@@ -72,7 +72,7 @@ void controlLoop()
 
 
   // ---- INPUTS ----
-  IMU.update();
+  IMU.updateData();
   
   int ain = analogRead(0);
   ain = constrain(ain, 0, 1024);
@@ -93,8 +93,15 @@ void controlLoop()
       if(IMU.pitch >= CONTROL_LAUNCH_ANGLE_DEG) 
       {
         motorOn = false;
-        state = JUMPING;
+        state = PREJUMP;
       }
+      
+      break;
+
+    case PREJUMP:
+      // While stationary, measure the direction of gravity
+      IMU.calibrateGravity();
+      state = JUMPING;
       
       break;
 
@@ -102,7 +109,7 @@ void controlLoop()
       // Disengage leg clutch
       angleC = -45.0f;
 
-      // Integrate IMU.verticalAccel to get vertical velocity
+      // Integrate IMU.vertical_acc to get vertical velocity
 
       // Once at peak of jump, deploy wings
       if(0 /* vertical velocity <= threshold */) state = GLIDING;
