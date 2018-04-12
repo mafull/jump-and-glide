@@ -90,7 +90,11 @@ void controlLoop()
       motorOn = true;
 
       // Once pitched enough, jump
-      if(IMU.pitch >= CONTROL_LAUNCH_ANGLE_DEG) state = JUMPING;
+      if(IMU.pitch >= CONTROL_LAUNCH_ANGLE_DEG) 
+      {
+        motorOn = false;
+        state = JUMPING;
+      }
       
       break;
 
@@ -98,8 +102,10 @@ void controlLoop()
       // Disengage leg clutch
       angleC = -45.0f;
 
+      // Integrate IMU.verticalAccel to get vertical velocity
+
       // Once at peak of jump, deploy wings
-      if(0 /* DO CLEVER STUFF HERE */) state = GLIDING;
+      if(0 /* vertical velocity <= threshold */) state = GLIDING;
       
       break;
 
