@@ -112,30 +112,30 @@ void FeatherIMU::updateRaw()
   // Request data from 14 registers, starting from AccX as set above
   // True releases device from the bus
   Wire.requestFrom(MPU6050_ADDRESS, 14, true);
-  FeatherIMU::AcX = Wire.read() << 8 | Wire.read();  // ACCEL_XOUT_H(0x3B) && ACCEL_XOUT_L(0x3C)
-  FeatherIMU::AcY = Wire.read() << 8 | Wire.read();  // ACCEL_YOUT_H(0x3D) && ACCEL_YOUT_L(0x3E)
-  FeatherIMU::AcZ = Wire.read() << 8 | Wire.read();  // ACCEL_ZOUT_H(0x3F) && ACCEL_ZOUT_L(0x40)
+  AcX = Wire.read() << 8 | Wire.read();  // ACCEL_XOUT_H(0x3B) && ACCEL_XOUT_L(0x3C)
+  AcY = Wire.read() << 8 | Wire.read();  // ACCEL_YOUT_H(0x3D) && ACCEL_YOUT_L(0x3E)
+  AcZ = Wire.read() << 8 | Wire.read();  // ACCEL_ZOUT_H(0x3F) && ACCEL_ZOUT_L(0x40)
   
-  FeatherIMU::Temp = Wire.read() << 8 | Wire.read();  // TEMP_OUT_H(0x41) && TEMP_OUT_L(0x42)
+  Temp = Wire.read() << 8 | Wire.read();  // TEMP_OUT_H(0x41) && TEMP_OUT_L(0x42)
   // Farenheight to Celsius
-  FeatherIMU::Temp = (FeatherIMU::Temp / 340) + 36.53;
+  Temp = (FeatherIMU::Temp / 340) + 36.53;
   
-  FeatherIMU::GyX = Wire.read() << 8 | Wire.read();  // GYRO_XOUT_H(0x43) && GYRO_XOUT_L(0x44)
-  FeatherIMU::GyY = Wire.read() << 8 | Wire.read();  // GYRO_YOUT_H(0x45) && GYRO_YOUT_L(0x46)
-  FeatherIMU::GyZ = Wire.read() << 8 | Wire.read();  // GYRO_ZOUT_H(0x47) && GYRO_ZOUT_L(0x48)
+  GyX = Wire.read() << 8 | Wire.read();  // GYRO_XOUT_H(0x43) && GYRO_XOUT_L(0x44)
+  GyY = Wire.read() << 8 | Wire.read();  // GYRO_YOUT_H(0x45) && GYRO_YOUT_L(0x46)
+  GyZ = Wire.read() << 8 | Wire.read();  // GYRO_ZOUT_H(0x47) && GYRO_ZOUT_L(0x48)
     
   // Convert to 3D euler angles (accel) and degrees/s (gyro)
   
   // Accelerometers
-  //FeatherIMU::AcX = 57.295 * atan((float)FeatherIMU::AcY / sqrt(pow((float)FeatherIMU::AcZ, 2) + pow(FeatherIMU::AcX, 2)));
-  //FeatherIMU::AcY = 57.295 * atan((float)-FeatherIMU::AcX / sqrt(pow((float)FeatherIMU::AcZ, 2) + pow(FeatherIMU::AcY, 2)));
+  //AcX = 57.295 * atan((float)AcY / sqrt(pow((float)AcZ, 2) + pow(AcX, 2)));
+  //AcY = 57.295 * atan((float)-AcX / sqrt(pow((float)AcZ, 2) + pow(AcY, 2)));
   
   // Gyros
-  FeatherIMU::GyX -= GyX_offset;
-  FeatherIMU::GyX /= GYRO_SENSITIVITY;
-  FeatherIMU::GyY -= GyY_offset;
-  FeatherIMU::GyY /= GYRO_SENSITIVITY;
-  FeatherIMU::GyZ -= GyZ_offset;
-  FeatherIMU::GyZ /= GYRO_SENSITIVITY;
+  GyX -= GyX_offset;
+  GyX /= GYRO_SENSITIVITY;
+  GyY -= GyY_offset;
+  GyY /= GYRO_SENSITIVITY;
+  GyZ -= GyZ_offset;
+  GyZ /= GYRO_SENSITIVITY;
 }
 
