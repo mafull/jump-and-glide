@@ -8,7 +8,7 @@ class FeatherIMU
 {
   public:
     bool init();
-    int16_t calibrateGravity(); // Only call this when under no acceleration.
+    void calibrateGravity(); // Only call this when under no acceleration.
     void updateData();
 
     float roll, pitch, heading;
@@ -20,10 +20,9 @@ class FeatherIMU
       
     int16_t AcX, AcY, AcZ;
     int16_t GyX, GyY, GyZ;
-    int16_t Temp;  
     int32_t GyX_offset, GyY_offset, GyZ_offset;
 
-    int16_t gravity_angle;
+    int16_t gravity_angleX, gravity_angleY, gravity_angleZ;
 };
 
 

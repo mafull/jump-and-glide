@@ -1,3 +1,4 @@
+#include <math.h>
 #include "FeatherIMU.hpp"
 #include "FeatherServos.hpp"
 #include "PID.hpp"
@@ -90,7 +91,7 @@ void controlLoop()
       motorOn = true;
 
       // Once pitched enough, jump
-      if(IMU.pitch >= CONTROL_LAUNCH_ANGLE_DEG) 
+      if(IMU.pitch >= CONTROL_LAUNCH_ANGLE_DEG*M_PI/180) 
       {
         motorOn = false;
         state = PREJUMP;
