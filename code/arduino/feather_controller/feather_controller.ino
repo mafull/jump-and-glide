@@ -6,6 +6,8 @@
 
 
 #define CONTROL_LAUNCH_ANGLE_DEG  70.0f
+#define GLIDE_THRESHOLD_MPS       1.0f
+#define LANDED_THRESHOLD_MPSS     2*GRAVITY
 
 #define LOOP_FREQUENCY_HZ         100
 
@@ -27,6 +29,7 @@ typedef enum State_t {IDLE = 0,
 
 State state = IDLE;
 float desiredHeading = 0.0f;
+float vertical_vel = 0;
 
 void advanceState() 
 {
@@ -83,61 +86,75 @@ void controlLoop()
   switch(state) 
   {
     case IDLE:
-
+    {
+      delay(1000);    
+      state = WINDING;
+      
       break;
-
+    }
     case WINDING:
+    {
       // Turn winding motor on
       motorOn = true;
 
       // Once pitched enough, jump
-      if(IMU.pitch >= CONTROL_LAUNCH_ANGLE_DEG*M_PI/180) 
+      if(IMU.pitch >= CONTROL_LAUNCH_ANGLE_DEG*M_PI/180)
       {
         motorOn = false;
         state = PREJUMP;
       }
       
       break;
-
+    }
     case PREJUMP:
+    {
       // While stationary, measure the direction of gravity
+      vertical_vel = 0;
       IMU.calibrateGravity();
+      
+      // Disengage leg clutch to jump
+      angleC = -45.0f;      
       state = JUMPING;
       
       break;
-
+    }
     case JUMPING:
-      // Disengage leg clutch
-      angleC = -45.0f;
-
+    {
       // Integrate IMU.vertical_acc to get vertical velocity
+      vertical_vel += IMU.vertical_acc/LOOP_FREQUENCY_HZ;
 
-      // Once at peak of jump, deploy wings
-      if(0 /* vertical velocity <= threshold */) state = GLIDING;
+      // Once at peak of jump, disengage wing clutch  to glide
+      if((IMU.vertical_acc < 0) && (vertical_vel <= GLIDE_THRESHOLD_MPS))
+      {
+        angleC = 45.0f;
+        state = GLIDING;
+      }
       
       break;
-
+    }
     case GLIDING:
-      // Disengage wing clutch
-      angleC = 45.0f;
+    {
+      // TODO: Calculate desired pitch/roll
 
-      // CALCULATE DESIRED PITCH/ROLL
-
-      // Use desired pitch/roll to generate servo outputs
-      {
+      // Generate servo outputs
       float a = map(ain, 0, 1024, -90, 90);
       angleLW = a;
       angleRW = -a;
-      }
 
       // Once landed, reset
-      if(0 /* DO CLEVER STUFF HERE */) state = IDLE;
+      if(IMU.vertical_acc > LANDED_THRESHOLD_MPSS) 
+      {
+        angleC = 0.0f;
+        state = IDLE;
+      }
       
       break;
-
+    }
     default:
+    {
       // WHY ARE YOU HERE
       break;
+    }
   }
 
 

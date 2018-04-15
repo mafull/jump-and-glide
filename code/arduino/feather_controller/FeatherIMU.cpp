@@ -19,8 +19,6 @@
 #define MPU6050_PWR_MGMT_1    0x6B
 #define MPU6050_WHO_AM_I      0x75
 
-#define GRAVITY 9.80665
-
 
 FeatherIMU IMU;
 

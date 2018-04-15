@@ -4,6 +4,8 @@
 #ifndef __FEATHER_IMU_HPP
 #define __FEATHER_IMU_HPP
 
+#define GRAVITY 9.80665f
+
 class FeatherIMU 
 {
   public:
