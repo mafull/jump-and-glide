@@ -2,8 +2,8 @@
 
 #define PIN_LED_STATUS     13
 #define PIN_SERVO          9
-#define DISENGAGE_ANGLE    30
-#define MIDDLE_ANGLE       80
+#define DISENGAGE_ANGLE    25
+#define MIDDLE_ANGLE       105
 
 Servo myservo;
 
