@@ -1,4 +1,4 @@
-#include "imu.h"
+#include "FeatherIMU.hpp"
 
 #include <Wire.h>
 #include <Arduino.h>
