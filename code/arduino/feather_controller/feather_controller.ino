@@ -19,6 +19,13 @@
 #define SERVO_NUM_LEFT_WING		    0     // Pin 5
 #define SERVO_NUM_RIGHT_WING	    1     // Pin 6
 
+#define PID_HEADING_KP            0.1
+#define PID_HEADING_KI            0.001
+#define PID_HEADING_KD            0.01
+#define PID_PITCH_KP              0.1
+#define PID_PITCH_KI              0.001
+#define PID_PITCH_KD              0.01
+
 typedef enum State_t {IDLE = 0,
                       WINDING,
                       PREJUMP,
@@ -30,14 +37,15 @@ typedef enum State_t {IDLE = 0,
 State state = IDLE;
 float desiredHeading = 0.0f;
 float vertical_vel = 0;
+PID *headingPID, *pitchPID;
 
-void advanceState() 
+void advanceState()
 {
   state = (State)(((int)state + 1)%NUM_STATES);
 }
 
 
-void setup() 
+void setup()
 {
   // Initialise serial
   Serial.begin(115200);
@@ -46,13 +54,26 @@ void setup()
   // Initialise button
   pinMode(PIN_BUTTON, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(9), advanceState, RISING);
-  
+
   // Initialise motor
   pinMode(PIN_MOTOR, OUTPUT);
 
   // Initialise IMU
-  IMU.init();
-  
+  if (imu.init()) {
+    Serial.println("IMU initialised");
+    Serial.print("Calibrating gyros... ");
+    imu.calibrateGyros();
+    imu.setInitialOrientation();
+    Serial.println("Calibrated");
+  } else {
+    Serial.println("Failed to initialise IMU!");
+    while (1) {}
+  }
+
+  // Initialise PID controllers
+  headingPID = new PID(PID_HEADING_KP, PID_HEADING_KI, PID_HEADING_KD);
+  pitchPID = new PID(PID_PITCH_KP, PID_PITCH_KI, PID_PITCH_KD);
+
 	// Initialise timers for servos
 	Servos.init();
 
@@ -63,10 +84,11 @@ void setup()
 
 	// Enable all servos
 	Servos.enable();
+
 }
 
 
-void controlLoop() 
+void controlLoop()
 {
   // Default states
   bool motorOn = false;         // Winding motor on/off
@@ -76,20 +98,20 @@ void controlLoop()
 
 
   // ---- INPUTS ----
-  IMU.updateData();
-  
-  int ain = analogRead(0);
-  ain = constrain(ain, 0, 1024);
+  // Get IMU data
+  float roll, pitch, heading;
+  imu.update();
+  imu.getRPH(&roll, &pitch, &heading);
 
 
   // ---- STATE MACHINE ----
-  switch(state) 
+  switch(state)
   {
     case IDLE:
     {
-      delay(1000);    
+      delay(1000);
       state = WINDING;
-      
+
       break;
     }
     case WINDING:
@@ -98,56 +120,58 @@ void controlLoop()
       motorOn = true;
 
       // Once pitched enough, jump
-      if(IMU.pitch >= CONTROL_LAUNCH_ANGLE_DEG*M_PI/180)
+      if(pitch >= CONTROL_LAUNCH_ANGLE_DEG*M_PI/180)
       {
         motorOn = false;
         state = PREJUMP;
       }
-      
+
       break;
     }
     case PREJUMP:
     {
       // While stationary, measure the direction of gravity
       vertical_vel = 0;
-      IMU.calibrateGravity();
-      
+
       // Disengage leg clutch to jump
-      angleC = -45.0f;      
+      angleC = -45.0f;
       state = JUMPING;
-      
+
       break;
     }
     case JUMPING:
     {
       // Integrate IMU.vertical_acc to get vertical velocity
-      vertical_vel += IMU.vertical_acc/LOOP_FREQUENCY_HZ;
+      vertical_vel += imu.getVertAcc()/LOOP_FREQUENCY_HZ;
 
       // Once at peak of jump, disengage wing clutch  to glide
-      if((IMU.vertical_acc < 0) && (vertical_vel <= GLIDE_THRESHOLD_MPS))
+      if((imu.getVertAcc() < 0) && (vertical_vel <= GLIDE_THRESHOLD_MPS))
       {
+        // Return clutch servo to the centre position
         angleC = 45.0f;
+
+        // Reset PID controllers
+        headingPID->reset();
+        pitchPID->reset();
+
         state = GLIDING;
       }
-      
+
       break;
     }
     case GLIDING:
     {
-      // TODO: Calculate desired pitch/roll
-
-      // Generate servo outputs
-      float a = map(ain, 0, 1024, -90, 90);
-      angleLW = a;
-      angleRW = -a;
-
       // Once landed, reset
-      if(IMU.vertical_acc > LANDED_THRESHOLD_MPSS) 
+      if(imu.getVertAcc() > LANDED_THRESHOLD_MPSS)
       {
         angleC = 0.0f;
         state = IDLE;
+      } else {
+        // Update PID controllers and combine their outputs
+        // Servos are flipped, hence - sign
+        angleLW = 90 + pitchPID->update(-15.0f, pitch) + headingPID->update(0.0f, heading);
+        angleRW = -(90 + pitchPID->update(-15.0f, pitch) - headingPID->update(0.0f, heading));
       }
-      
       break;
     }
     default:
@@ -173,9 +197,9 @@ void controlLoop()
   char pitchStr[5] = "";
   char rollStr[5] = "";
   char headingStr[5] = "";
-  dtostrf(IMU.pitch, 4, 2, pitchStr);
-  dtostrf(IMU.roll, 4, 2, rollStr);
-  dtostrf(IMU.heading, 4, 2, headingStr);
+  dtostrf(pitch, 4, 2, pitchStr);
+  dtostrf(roll, 4, 2, rollStr);
+  dtostrf(heading, 4, 2, headingStr);
   sprintf(str, "%01d|-> rph: %s %s %s | servos: %4d %4d %4d | motor: %1d",
     state,
     rollStr, pitchStr, headingStr,
@@ -185,7 +209,7 @@ void controlLoop()
 }
 
 
-void loop() 
+void loop()
 {
 	controlLoop();
   delay(1000/LOOP_FREQUENCY_HZ);
